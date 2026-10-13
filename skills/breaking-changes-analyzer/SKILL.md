@@ -31,8 +31,8 @@ Rules:
 
 - More than 2 names or more than 2 versions: print the usage below and stop.
 - Versions: none = derive both; 1 = `max-version`; 2 = `min-version` then `max-version`.
-- Names: 1 = `{npm-package}`. In a monorepo, 2 = `{local-package}` then `{npm-package}`. In a regular repo, 2 names is a usage error.
-- No `{npm-package}`: print usage and stop.
+- Names: the last name is always `{npm-package}`. A single name is therefore always `{npm-package}`, never `{local-package}`, in any repo type. With 2 names the first is `{local-package}`. In a regular repo it is ignored (it is the repo's own package); in a monorepo it restricts the run to that workspace.
+- Print the usage and stop only when there are no names at all, or the counts above are violated. A single name such as `got` is a complete, valid call.
 
 Usage:
 
@@ -42,7 +42,7 @@ Usage:
 
 ## 2. Detect repo type and local manifests
 
-- Read the root `package.json`. A `workspaces` key (array or `{ "packages": [...] }`) means monorepo; otherwise regular repo.
+- Read the root `package.json`. A `workspaces` key (array or `{ "packages": [...] }`) means monorepo; otherwise regular repo. If there is no root `package.json`, say so and stop (this is not a usage error).
 - If the user attached or referenced `package.json` files in the conversation, use exactly those as the local manifests and skip discovery.
 - Monorepo discovery: expand the `workspaces` globs and find the member `package.json` files. Recursive patterns like `shop/**/*` often match nothing in a glob search; in that case run `find <top-level workspace dirs> -name package.json -not -path "*/node_modules/*" -not -path "*/dist/*"` and keep only manifests that have a `name`. The root `package.json` is a candidate manifest too, so include it.
 - `{local-package}` (workspace package name or directory) restricts the run to that single manifest. If it matches no workspace, say so and stop.

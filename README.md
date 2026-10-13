@@ -33,7 +33,7 @@ Tokens are classified by shape: semver-looking values are versions, everything e
 | `/breaking-changes-analyzer chalk 5.3.0` | version in `package.json` | `5.3.0` |
 | `/breaking-changes-analyzer chalk 4.1.2 5.3.0` | `4.1.2` | `5.3.0` |
 
-With 0 or 1 versions, the run exits if the package is not in `package.json`. With both versions it runs regardless.
+With 0 or 1 versions, the run exits if the package is not in `package.json`. With both versions it runs regardless. A `local-package` name is not needed here; if given, it is ignored.
 
 ### Monorepo (root `package.json` has `workspaces`)
 
