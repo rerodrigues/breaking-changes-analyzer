@@ -4,7 +4,7 @@ description: Analyze an NPM package upgrade between two versions and report brea
 license: MIT
 metadata:
   author: Renato Rodrigues (rerodrigues)
-  version: "1.0.0"
+  version: "1.1.0"
   repository: https://github.com/rerodrigues/breaking-changes-analyzer
 argument-hint: "[local-package] <npm-package> [min-version] [max-version]"
 allowed-tools: Read, Glob, Grep, WebFetch, AskUserQuestion, Bash(npm view:*), Bash(npm config get:*), Bash(gh release:*), Bash(gh api:*), Bash(node --version), Bash(node -e:*), Bash(find:*)
