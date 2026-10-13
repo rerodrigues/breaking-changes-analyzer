@@ -83,6 +83,7 @@ For each segment (section 7):
 - `npm view <pkg> repository.url deprecated` plus `engines` and `peerDependencies` of the segment's start and end versions.
 - Official sources: GitHub Releases (`gh release list` / `gh release view`, or `gh api`), `CHANGELOG.md`, tags, commits or associated pull requests. Use WebFetch when `gh` is unavailable or the repo is not on GitHub.
 - Release bodies are often only a link (blog post, migration guide, docs). Follow those links with the agent's web-fetch tool and read the linked content.
+- Search for the official migration guide of each major hop in the segment. Most packages and tools publish one (docs site such as `/guide/migration` or `/migration`, `MIGRATION.md`, `UPGRADING.md`, a `docs/` folder, or a link from the release notes or README). Look at the `homepage` field from `npm view`, then try the repository docs. Read it fully and use it as a helper: it complements, and never replaces, your own analysis of the changelog and release notes. If none exists, say so in the report.
 - If a source is unreachable or the changelog is missing, say so in the report. Never invent changes.
 - Check every breaking-change candidate against the local context. A candidate that is only a runtime or toolchain requirement (e.g. minimum Node version) which the local context already satisfies is not a breaking change: omit it. Local Node version, in order: `engines.node` of the local or root manifest (use its lower bound), `.nvmrc` / `.node-version`, then `node --version`.
 
@@ -158,6 +159,7 @@ Migration plan rules:
 
 - Omit trivial steps such as running `npm install`.
 - Step-by-step, focused on the refactoring required for the breaking changes and on adopting advantageous new features.
+- Build the plan yourself from the changelog analysis. When an official migration guide was found (section 5), use it to add steps, fix ordering and catch missed items, and link it at the top of the plan. Keep your own judgement: the guide never replaces your analysis.
 - Keep steps generic ("check scripts that parse `pm2 ls` output"). Do not scan the codebase for usage during the analysis, and do not name repo files you have not been told about.
 - One self-contained plan per version group, titled `[{group_version} -> {version_to}]` and ordered from the group's own version upward. Build it from the findings of the segments that group applies. Do not tag steps by segment and do not make groups read each other's plans.
 - A step needed by several groups is repeated in each plan.
