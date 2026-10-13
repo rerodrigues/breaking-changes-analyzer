@@ -104,16 +104,18 @@ For each flagged requirement, name the version that raised it when known. Worksp
 Build segments once for the whole run, then reuse them:
 
 1. List the published stable versions between the lowest local version and max (`npm view <pkg> versions --json`; keep prereleases only if max is one).
-2. Cut points: every distinct local version; the last published version of each major line below max's major (for `0.x`, of each minor line); and max.
-3. A segment runs from one cut point (exclusive) to the next (inclusive). Because cuts sit at the end of each major line, a segment never spans two majors and a major hop is never separated from its own patch releases. Analyze each segment once.
-4. A version group applies every segment from its local version up to max. Merge adjacent segments in the report when they have nothing worth listing.
+2. Cut points: every distinct local version and max. Never cut at intermediate versions, major lines or patch releases.
+3. A segment runs from one cut point (exclusive) to the next (inclusive). Analyze each segment once. The release notes of every version inside a segment are merged into that segment's single section.
+4. A version group applies every segment from its local version up to max.
 
-Example: groups 5.4.3 and 6.0.14, max 7.0.4. Cut points 5.4.3, 6.0.14 (local version and last 6.x), 7.0.4. Segments: 5.4.3 -> 6.0.14 (applies to the 5.4.3 group), 6.0.14 -> 7.0.4 (applies to both).
+Example: single group 7.3.6, max 8.3.4. One segment: 7.3.6 -> 8.3.4. Never split it into 7.3.6 -> 7.3.7 and 7.3.7 -> 8.3.4.
+
+Example: groups 5.4.3 and 6.0.14, max 7.0.4. Cut points 5.4.3, 6.0.14, 7.0.4. Segments: 5.4.3 -> 6.0.14 (applies to the 5.4.3 group), 6.0.14 -> 7.0.4 (applies to both).
 
 Rendering:
 
-- Single group and a single segment: flat format, no segment heading.
-- Otherwise: one section per segment, each with its own Breaking, Non-Breaking, and New Features lists, followed by the group table (section 8).
+- Single group: always exactly one section, from the local version to max, in flat format with no segment heading.
+- Several groups: one section per segment, each with its own Breaking, Non-Breaking, and New Features lists, followed by the group table (section 8).
 
 ## 8. Report
 

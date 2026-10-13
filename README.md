@@ -2,7 +2,7 @@
 
 Agent skill that analyzes an NPM package upgrade between two versions and outputs:
 
-- Breaking changes, non-breaking changes and new features, per version-range segment when the upgrade spans several majors
+- Breaking changes, non-breaking changes and new features, in one section from the current to the target version (one section per segment only when several current versions exist in a monorepo)
 - Compatibility blockers (engines, peer ranges, tools that cap the package), shown only when something blocks
 - One migration plan per current version
 - A prompt to proceed with the upgrade and/or save the report to a file
@@ -48,7 +48,7 @@ If `package.json` files are attached to the conversation, those are used as the 
 ## How it works
 
 - **Local version:** read from `package.json` only (lower bound of the range). `node_modules` and lockfiles are ignored. A `peerDependencies` range is never treated as an installed version. Odd ranges reduce as follows: `||` unions use the lowest alternative, hyphen ranges use the first version, and `*` or `latest` count as no version.
-- **Version groups (monorepo):** manifests are grouped by current version. The version range is cut into segments at each local version, at the last release of each major line, and at the target. Each segment is analyzed once and shared by the groups that cross it.
+- **Version groups (monorepo):** manifests are grouped by current version. The version range is cut into segments only at each local version and at the target, so a single group always gets one section. Each segment is analyzed once and shared by the groups that cross it.
 - **Release data:** GitHub Releases, `CHANGELOG.md`, tags and linked migration guides. Only versions published on npm are used. If a source is unreachable the report says so.
 - **Breaking vs. not:** requirements the local environment already satisfies (for example a minimum Node version) are not reported as breaking.
 - **Compatibility blockers:** shown only when something blocks. Four checks: target `engines` vs local Node, target peers vs local packages, local peer ranges that exclude the target, and direct dependencies whose peer range excludes the target. The last check runs one `npm view` per direct dependency, so it is slow in big monorepos.
