@@ -4,6 +4,7 @@ Agent skill that analyzes an NPM package upgrade between two versions and output
 
 - Breaking changes, non-breaking changes and new features, in one section from the current to the target version (one section per segment only when several current versions exist in a monorepo)
 - Compatibility blockers (engines, peer ranges, tools that cap the package), shown only when something blocks
+- Dependency updates: companion dependencies that must move with the package, at compatible versions
 - One migration plan per current version
 - A prompt to proceed with the upgrade and/or save the report to a file
 
@@ -53,10 +54,11 @@ If `package.json` files are attached to the conversation, those are used as the 
 - **Release data:** GitHub Releases, `CHANGELOG.md`, tags, linked migration guides and the official migration guide of the package (docs site, `MIGRATION.md`, `UPGRADING.md`), used as a helper that complements the changelog analysis when building the migration plan. Only versions published on npm are used. If a source is unreachable the report says so.
 - **Breaking vs. not:** requirements the local environment already satisfies (for example a minimum Node version) are not reported as breaking.
 - **Compatibility blockers:** shown only when something blocks. Four checks: target `engines` vs local Node, target peers vs local packages, local peer ranges that exclude the target, and direct dependencies whose peer range excludes the target. The last check runs one `npm view` per direct dependency, so it is slow in big monorepos.
-- **Report:** a header with "Found in x of y packages in the workspace" (monorepo, `y` includes the root manifest), a version-groups table, the compatibility blockers, per-segment sections (Breaking Changes, Non-Breaking Changes / Attention Required, New Features & Highlights), and one migration plan per version group, titled `[{current} -> {target}]`.
+- **Dependency updates:** dependencies flagged by the peer check, plus those the changelog or official guide says need a new version. Each goes to the newest version whose peer range includes the target and that respects the cooldown. A dependency with no compatible version is reported as a blocker instead. Nothing else is bumped.
+- **Report:** a header with "Found in x of y packages in the workspace" (monorepo, `y` includes the root manifest), a version-groups table, the compatibility blockers, the dependency updates, per-segment sections (Breaking Changes, Non-Breaking Changes / Attention Required, New Features & Highlights), and one migration plan per version group, titled `[{current} -> {target}]`.
 - **Analysis is read-only and does not scan your code.** Migration steps stay generic.
 - **Close-out:** the skill asks whether to proceed and whether to save the report to `docs/upgrades/<pkg-slug>-<from>-to-<to>.md`.
-- **On proceed:** it bumps the affected manifests to the resolved target (keeping each range style), installs with the package manager detected from the lockfile without bypassing the cooldown or exclusion rules, reads the repo to apply the migration plan, and runs the typecheck, lint and test scripts.
+- **On proceed:** it bumps the affected manifests to the resolved target and the companion dependencies (keeping each range style), installs once with the package manager detected from the lockfile without bypassing the cooldown or exclusion rules, reads the repo to apply the migration plan, and runs the typecheck, lint and test scripts.
 - **The skill never commits or pushes.**
 
 ## Requirements

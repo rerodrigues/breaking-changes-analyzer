@@ -105,6 +105,13 @@ Checks, per version group (local manifests differ):
 
 For each flagged requirement, name the version that raised it when known. Workspaces in one group with identical results are listed together.
 
+Companion dependencies, per version group, built from the same data (no extra manifest scan):
+
+- Candidates: every dependency flagged by check 4, every target peer that the in-scope manifest declares at an incompatible version (check 2), and every dependency that the changelog or the official migration guide says needs a new version.
+- For each candidate, pick the newest stable version whose `peerDependencies` range includes the max version and that is eligible under the section 3 cooldown and exclusion rules. Check versions newest first (`npm view <dep> versions --json`, then `npm view <dep>@<version> peerDependencies --json`) and stop at the first match.
+- If no compatible version exists, list the dependency under Compatibility blockers and do not bump it.
+- Never add dependencies that nothing flags or names (no whole-ecosystem bumps).
+
 ## 7. Segments
 
 Build segments once for the whole run, then reuse them:
@@ -142,6 +149,9 @@ Target: {version_to} (latest {x} is inside the {n}-day cooldown)  <!-- only when
 ## Compatibility blockers       <!-- omit the whole block when nothing is flagged -->
 - [{group or workspaces}] {what blocks}: {local state} vs {required}, {fix}
 
+## Dependency updates            <!-- omit the whole block when empty -->
+- [{group or workspaces}] {dep}: {current} -> {version} ({short reason})
+
 ## {vA} -> {vB}                  <!-- one per segment; omit heading for single segment -->
 Applies to: {groups}             <!-- only when more than one group -->
 
@@ -164,7 +174,7 @@ Single group: heading is `{package} - Upgrade from {version_from} to {version_to
 
 Migration plan rules:
 
-- Omit trivial steps such as running `npm install`.
+- Omit trivial steps such as running `npm install`, and do not repeat the version bumps listed under Dependency updates.
 - Step-by-step, focused on the refactoring required for the breaking changes and on adopting advantageous new features.
 - Build the plan yourself from the changelog analysis. When an official migration guide was found (section 5), use it to add steps, fix ordering and catch missed items, and link it at the top of the plan. Keep your own judgement: the guide never replaces your analysis.
 - Keep steps generic ("check scripts that parse `pm2 ls` output"). Do not scan the codebase for usage during the analysis, and do not name repo files you have not been told about.
@@ -182,8 +192,8 @@ If saving: write the report markdown to `docs/upgrades/{pkg-slug}-{lowest_from}-
 
 If proceeding:
 
-1. Update the version in the affected manifests only (every version group) to the resolved target, keeping each manifest's existing range style (pinned stays pinned, `^` stays `^`). Apply to each workspace only the plan of its own version group.
-2. Install with the package manager indicated by the lockfile (`package-lock.json` = npm, `pnpm-lock.yaml` = pnpm, `yarn.lock` = yarn), honoring the project's cooldown and exclusion rules. Never bypass them with flags or config changes. If install fails, stop and tell the user. Do not try to work around it.
+1. Update the version in the affected manifests only (every version group) to the resolved target, and bump every companion dependency listed under Dependency updates for that group, keeping each manifest's existing range style (pinned stays pinned, `^` stays `^`). Apply to each workspace only the plan of its own version group.
+2. Install once with the package manager indicated by the lockfile (`package-lock.json` = npm, `pnpm-lock.yaml` = pnpm, `yarn.lock` = yarn), honoring the project's cooldown and exclusion rules. Never bypass them with flags or config changes. If install fails, stop and tell the user. Do not try to work around it.
 3. Apply the migration plan to the code. This is where the repo is read for how it uses the package (imports, config files, scripts); the analysis phase never does that.
 4. Run the project's typecheck, lint and test scripts when they exist. Fix failures caused by the upgrade; report any you cannot fix.
 
