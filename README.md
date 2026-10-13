@@ -48,6 +48,7 @@ If `package.json` files are attached to the conversation, those are used as the 
 ## How it works
 
 - **Local version:** read from `package.json` only (lower bound of the range). `node_modules` and lockfiles are ignored. A `peerDependencies` range is never treated as an installed version. Odd ranges reduce as follows: `||` unions use the lowest alternative, hyphen ranges use the first version, and `*` or `latest` count as no version.
+- **Cooldown:** if the project sets a minimum release age (for example npm `min-release-age` in `.npmrc`, or pnpm `minimumReleaseAge`), versions inside it are not eligible unless the package is on the exclusion list. When the max is `latest` (or omitted), it resolves to the newest eligible version and the report header says so. When you pass an explicit max that is inside the cooldown, the skill asks whether to keep it (the install may be refused) or use the newest eligible version.
 - **Version groups (monorepo):** manifests are grouped by current version. The version range is cut into segments only at each local version and at the target, so a single group always gets one section. Each segment is analyzed once and shared by the groups that cross it.
 - **Release data:** GitHub Releases, `CHANGELOG.md`, tags, linked migration guides and the official migration guide of the package (docs site, `MIGRATION.md`, `UPGRADING.md`), used as a helper that complements the changelog analysis when building the migration plan. Only versions published on npm are used. If a source is unreachable the report says so.
 - **Breaking vs. not:** requirements the local environment already satisfies (for example a minimum Node version) are not reported as breaking.
@@ -55,7 +56,7 @@ If `package.json` files are attached to the conversation, those are used as the 
 - **Report:** a header with "Found in x of y packages in the workspace" (monorepo, `y` includes the root manifest), a version-groups table, the compatibility blockers, per-segment sections (Breaking Changes, Non-Breaking Changes / Attention Required, New Features & Highlights), and one migration plan per version group, titled `[{current} -> {target}]`.
 - **Analysis is read-only and does not scan your code.** Migration steps stay generic.
 - **Close-out:** the skill asks whether to proceed and whether to save the report to `docs/upgrades/<pkg-slug>-<from>-to-<to>.md`.
-- **On proceed:** it bumps the affected manifests (keeping each range style), installs with the package manager detected from the lockfile, reads the repo to apply the migration plan, and runs the typecheck, lint and test scripts.
+- **On proceed:** it bumps the affected manifests to the resolved target (keeping each range style), installs with the package manager detected from the lockfile without bypassing the cooldown or exclusion rules, reads the repo to apply the migration plan, and runs the typecheck, lint and test scripts.
 - **The skill never commits or pushes.**
 
 ## Requirements

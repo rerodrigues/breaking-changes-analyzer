@@ -7,7 +7,7 @@ metadata:
   version: "1.0.0"
   repository: https://github.com/rerodrigues/breaking-changes-analyzer
 argument-hint: "[local-package] <npm-package> [min-version] [max-version]"
-allowed-tools: Read, Glob, Grep, WebFetch, AskUserQuestion, Bash(npm view:*), Bash(gh release:*), Bash(gh api:*), Bash(node --version), Bash(node -e:*), Bash(find:*)
+allowed-tools: Read, Glob, Grep, WebFetch, AskUserQuestion, Bash(npm view:*), Bash(npm config get:*), Bash(gh release:*), Bash(gh api:*), Bash(node --version), Bash(node -e:*), Bash(find:*)
 ---
 
 # NPM Package Upgrade and Compatibility Analyzer
@@ -57,6 +57,10 @@ Local version comes from `package.json` only. Do not read `node_modules` or lock
 - Default `max-version`: the `latest` dist-tag (`npm view <pkg> dist-tags --json`).
 - Validate that min and max exist (`npm view <pkg> versions --json`). If the package does not exist on npm, say so and stop.
 - Work only with versions that are published on npm. Never mention versions that were skipped or never published.
+- Cooldown: if the project sets a minimum release age, a version published more recently than that age is not eligible, unless `{npm-package}` matches the exclusion list. For npm read `min-release-age` and `min-release-age-exclude` with `npm config get` (they come from `.npmrc`); for pnpm read `minimumReleaseAge` and `minimumReleaseAgeExclude`; for other package managers use their equivalent. Units differ per package manager. Get publish dates with `npm view <pkg> time --json`. No cooldown configured: skip all cooldown rules.
+- Default `max-version` (no max given, or `latest`) inside the cooldown: use the newest eligible stable version instead, without asking, and say so in the report header.
+- Explicit `max-version` inside the cooldown: ask the user before analyzing, with two options: keep the requested version (warn that the package manager may refuse to install it unless they add an exclusion or lower the cooldown), or use the newest eligible version. Use the agent's interactive question tool if it has one, otherwise ask in chat and wait.
+- No eligible version newer than min: report that there is nothing to upgrade and stop.
 - If min >= max, report that there is nothing to upgrade and stop.
 
 Missing local version:
@@ -97,6 +101,7 @@ Checks, per version group (local manifests differ):
 2. Target `peerDependencies` against the versions of those peer packages declared in the in-scope manifest.
 3. Local peer ranges on the package: if an in-scope manifest lists the package in `peerDependencies` and the range does not include the max version, flag it (the range needs widening).
 4. Tools that cap the package: collect the distinct direct `dependencies` and `devDependencies` (name and lower-bound version) of all in-scope manifests, skipping workspace-internal packages. Reduce each dependency range to its lower bound as in section 3 and skip dependencies that have none (`workspace:`, `file:`, `link:`, git, tags, `*`). Skip `{npm-package}` itself. Run `npm view <dep>@<version> peerDependencies --json` for each in one loop and flag every dep whose `peerDependencies` range for the package excludes the max version. Only peer ranges count; a nested dependency range is not a conflict. Do not scan manifests outside the in-scope set: they do not use the package.
+5. Cooldown: if the user kept an explicit max version inside the cooldown (section 3), flag it: the package manager may refuse to install it unless an exclusion is added or the cooldown is lowered.
 
 For each flagged requirement, name the version that raised it when known. Workspaces in one group with identical results are listed together.
 
@@ -126,6 +131,8 @@ Present the result in this format. Keep descriptions brief. Every bullet is a si
 # {package} - Upgrade from {lowest_version_from} to {version_to}
 
 Found in {x} of {y} packages in the workspace  <!-- monorepo only; y counts the root manifest too -->
+
+Target: {version_to} (latest {x} is inside the {n}-day cooldown)  <!-- only when the cooldown limited the target -->
 
 ## Version groups                <!-- only when more than one group -->
 | Current | Workspaces | Segments to apply |
@@ -175,8 +182,8 @@ If saving: write the report markdown to `docs/upgrades/{pkg-slug}-{lowest_from}-
 
 If proceeding:
 
-1. Update the version in the affected manifests only (every version group), keeping each manifest's existing range style (pinned stays pinned, `^` stays `^`). Apply to each workspace only the plan of its own version group.
-2. Install with the package manager indicated by the lockfile (`package-lock.json` = npm, `pnpm-lock.yaml` = pnpm, `yarn.lock` = yarn). If install fails, stop and tell the user. Do not try to work around it.
+1. Update the version in the affected manifests only (every version group) to the resolved target, keeping each manifest's existing range style (pinned stays pinned, `^` stays `^`). Apply to each workspace only the plan of its own version group.
+2. Install with the package manager indicated by the lockfile (`package-lock.json` = npm, `pnpm-lock.yaml` = pnpm, `yarn.lock` = yarn), honoring the project's cooldown and exclusion rules. Never bypass them with flags or config changes. If install fails, stop and tell the user. Do not try to work around it.
 3. Apply the migration plan to the code. This is where the repo is read for how it uses the package (imports, config files, scripts); the analysis phase never does that.
 4. Run the project's typecheck, lint and test scripts when they exist. Fix failures caused by the upgrade; report any you cannot fix.
 
