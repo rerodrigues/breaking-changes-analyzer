@@ -196,5 +196,12 @@ If proceeding:
 2. Install once with the package manager indicated by the lockfile (`package-lock.json` = npm, `pnpm-lock.yaml` = pnpm, `yarn.lock` = yarn), honoring the project's cooldown and exclusion rules. Never bypass them with flags or config changes. If install fails, stop and tell the user. Do not try to work around it.
 3. Apply the migration plan to the code. This is where the repo is read for how it uses the package (imports, config files, scripts); the analysis phase never does that.
 4. Run the project's typecheck, lint and test scripts when they exist. Fix failures caused by the upgrade; report any you cannot fix.
+5. Post-migration audit, after step 4 passes or its failures are reported. Scan the in-scope manifests, limited to `{npm-package}`, the bumped dependencies and the tooling around them (not whole-repo hygiene). Report only findings backed by a file path (and line when known); never speculate. Categories:
+   - Leftovers: temporary compat flags or shims, deprecated APIs still used, polyfills or type packages the new version makes redundant.
+   - Unneeded dependencies: dependencies only the old version needed, or that nothing imports anymore.
+   - Orphan config: config keys or files for removed or renamed options and replaced tools.
+   - Unoptimized usage: code that works but could use a newer API or a feature from New Features & Highlights or the official guide.
+
+   Present the findings grouped by category, omitting empty categories (if all are empty, say so in one line). Then ask which to apply (interactive question tool if available, otherwise in chat). Apply only the approved ones, re-run the typecheck, lint and test scripts, and report the result.
 
 Never commit or push.

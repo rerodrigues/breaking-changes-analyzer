@@ -6,7 +6,7 @@ Agent skill that analyzes an NPM package upgrade between two versions and output
 - Compatibility blockers (engines, peer ranges, tools that cap the package), shown only when something blocks
 - Dependency updates: companion dependencies that must move with the package, at compatible versions
 - One migration plan per current version
-- A prompt to proceed with the upgrade and/or save the report to a file
+- A prompt to proceed with the upgrade and/or save the report to a file, followed by a post-migration audit of leftovers, unneeded dependencies, orphan config and unoptimized usage
 
 Works in regular repos and npm-workspaces monorepos.
 
@@ -59,6 +59,7 @@ If `package.json` files are attached to the conversation, those are used as the 
 - **Analysis is read-only and does not scan your code.** Migration steps stay generic.
 - **Close-out:** the skill asks whether to proceed and whether to save the report to `docs/upgrades/<pkg-slug>-<from>-to-<to>.md`.
 - **On proceed:** it bumps the affected manifests to the resolved target and the companion dependencies (keeping each range style), installs once with the package manager detected from the lockfile without bypassing the cooldown or exclusion rules, reads the repo to apply the migration plan, and runs the typecheck, lint and test scripts.
+- **Post-migration audit:** after the checks, it scans the package, the bumped dependencies and their tooling for leftovers (compat flags, shims, deprecated APIs), unneeded dependencies, orphan config and unoptimized usage. Findings need a file reference. It lists them by category, asks which to apply, applies only those and re-runs the checks.
 - **The skill never commits or pushes.**
 
 ## Requirements
