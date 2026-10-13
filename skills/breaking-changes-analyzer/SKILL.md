@@ -119,7 +119,7 @@ Rendering:
 
 ## 8. Report
 
-Present the result in this format. Keep descriptions brief. Omit empty sub-sections (Breaking, Non-Breaking, New Features) but keep a segment's own heading even when only one sub-section remains.
+Present the result in this format. Keep descriptions brief. Every bullet is a single short, descriptive line: no nested sub-bullets. Describe what changed, not how: leave out option names, renames, flags and other fine-grained detail, and omit any part that is too technical for this report (that belongs in the migration plan or the official guide). Example: "**Rolldown replaces Rollup, Oxc replaces esbuild.** Config options renamed, auto-converted with a deprecation warning". Omit empty sub-sections (Breaking, Non-Breaking, New Features) but keep a segment's own heading even when only one sub-section remains.
 
 ```markdown
 # {package} - Upgrade from {lowest_version_from} to {version_to}
