@@ -59,7 +59,8 @@ If `package.json` files are attached to the conversation, those are used as the 
 - **Analysis is read-only and does not scan your code.** Migration steps stay generic.
 - **Close-out:** the skill asks whether to proceed and whether to save the report to `docs/upgrades/<pkg-slug>-<from>-to-<to>.md`.
 - **On proceed:** it bumps the affected manifests to the resolved target and the companion dependencies (keeping each range style), installs once with the package manager detected from the lockfile without bypassing the cooldown or exclusion rules, reads the repo to apply the migration plan, and runs the typecheck, lint and test scripts.
-- **Post-migration audit:** after the checks, it scans the package, the bumped dependencies and their tooling for leftovers (compat flags, shims, deprecated APIs), unneeded dependencies, orphan config and unoptimized usage. Findings need a file reference. It lists them by category, asks which to apply, applies only those and re-runs the checks.
+- **Post-migration audit:** after the checks, it scans the package, the bumped dependencies and their tooling for leftovers (compat flags, shims, deprecated APIs), unneeded dependencies, orphan config and unoptimized usage. Findings need a file reference. They are numbered (`1.1`, `1.2`, `2.1`...) and listed by category in a message with nothing else. You answer with numbers (`1.1, 2`), `all` or `none`, and only those are applied, followed by a new run of the checks.
+- **End summary:** shown once, after the audit is settled, as a numbered list (what was installed, changed, removed, audit result, checks). It does not repeat the report. If the report was saved, the audit findings and this summary are appended to the saved file.
 - **The skill never commits or pushes.**
 
 ## Requirements
@@ -70,7 +71,7 @@ If `package.json` files are attached to the conversation, those are used as the 
 
 ## Credits
 
-Created by [Renato Rodrigues](https://github.com/rerodrigues) (`@rerodrigues`). Version 1.0.0.
+Created by [Renato Rodrigues](http://renatorodrigues.com).
 
 Issues and contributions: <https://github.com/rerodrigues/breaking-changes-analyzer>
 

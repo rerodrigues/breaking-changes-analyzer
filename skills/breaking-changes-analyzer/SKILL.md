@@ -4,7 +4,7 @@ description: Analyze an NPM package upgrade between two versions and report brea
 license: MIT
 metadata:
   author: Renato Rodrigues (rerodrigues)
-  version: "1.1.0"
+  version: "1.2.0"
   repository: https://github.com/rerodrigues/breaking-changes-analyzer
 argument-hint: "[local-package] <npm-package> [min-version] [max-version]"
 allowed-tools: Read, Glob, Grep, WebFetch, AskUserQuestion, Bash(npm view:*), Bash(npm config get:*), Bash(gh release:*), Bash(gh api:*), Bash(node --version), Bash(node -e:*), Bash(find:*)
@@ -170,6 +170,8 @@ Applies to: {groups}             <!-- only when more than one group -->
 1. {refactoring step to resolve a breaking change or adopt a new practice}
 ```
 
+Several version groups: migration plan steps keep counting across the group sub-headings (`1.`, `2.`, ... never restarting per group).
+
 Single group: heading is `{package} - Upgrade from {version_from} to {version_to}`, and the group table and segment tags are omitted. Regular repo: always this case.
 
 Migration plan rules:
@@ -195,13 +197,20 @@ If proceeding:
 1. Update the version in the affected manifests only (every version group) to the resolved target, and bump every companion dependency listed under Dependency updates for that group, keeping each manifest's existing range style (pinned stays pinned, `^` stays `^`). Apply to each workspace only the plan of its own version group.
 2. Install once with the package manager indicated by the lockfile (`package-lock.json` = npm, `pnpm-lock.yaml` = pnpm, `yarn.lock` = yarn), honoring the project's cooldown and exclusion rules. Never bypass them with flags or config changes. If install fails, stop and tell the user. Do not try to work around it.
 3. Apply the migration plan to the code. This is where the repo is read for how it uses the package (imports, config files, scripts); the analysis phase never does that.
-4. Run the project's typecheck, lint and test scripts when they exist. Fix failures caused by the upgrade; report any you cannot fix.
+4. Run the project's typecheck, lint and test scripts when they exist. Fix failures caused by the upgrade. Do not report progress or recap what was done: the only thing to say at this point is a failure you cannot fix. Everything else goes in the end summary.
 5. Post-migration audit, after step 4 passes or its failures are reported. Scan the in-scope manifests, limited to `{npm-package}`, the bumped dependencies and the tooling around them (not whole-repo hygiene). Report only findings backed by a file path (and line when known); never speculate. Categories:
    - Leftovers: temporary compat flags or shims, deprecated APIs still used, polyfills or type packages the new version makes redundant.
    - Unneeded dependencies: dependencies only the old version needed, or that nothing imports anymore.
    - Orphan config: config keys or files for removed or renamed options and replaced tools.
    - Unoptimized usage: code that works but could use a newer API or a feature from New Features & Highlights or the official guide.
 
-   Present the findings grouped by category, omitting empty categories (if all are empty, say so in one line). Then ask which to apply (interactive question tool if available, otherwise in chat). Apply only the approved ones, re-run the typecheck, lint and test scripts, and report the result.
+   The message with the audit contains only the findings and the question below, nothing else: no recap of the report, no "Done" block, no progress notes. Present the findings grouped by category as one numbered list: a big number per category and `{category}.{item}` per item (never bullets), omitting empty categories (if all are empty, the audit message is one line saying so, and the end summary follows right away). Then ask which to apply in chat, ending the list with a line such as: "Which findings should I apply? Reply with numbers, e.g. `1.1, 1.3, 2` (a big number means the whole category), or `all` / `none`." Accept that reply format (an interactive question tool may be used only if it can take free-form number input). Apply only the approved ones, then re-run the typecheck, lint and test scripts. Do not report the result on its own: it goes in the end summary.
+
+Show the end summary only after the audit step is fully closed: if findings were found, the user has answered which to apply and the approved ones are applied; if none were found, right after the audit line. Never show it while that question is pending. Do not repeat the report in it or in any other close-out message: the report was already shown in section 8 and may be saved to a file. Finish with a short summary of what was done as one numbered list (`1.`, `2.`, ... never bullets), one item per line, each starting with a bold label (e.g. Report, Install, the files changed, Removed, Specs, Audit, Checks, Not changed). Audit lists the applied and skipped findings by number and short description. Checks says whether typecheck, lint and tests pass, and names any that fail. Omit labels that do not apply.
+
+If the report was saved, append to the saved file once the work is done, without rewriting the existing content:
+
+1. `## Post-migration audit`: the numbered findings, only when there were any, with the applied and skipped findings marked by number.
+2. `## Summary`: the same end summary shown to the user.
 
 Never commit or push.
